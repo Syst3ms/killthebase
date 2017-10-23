@@ -5,7 +5,7 @@ import org.bukkit.ChatColor;
 /**
  * Created by ARTHUR on 13/10/2017.
  */
-public enum TeamColor {
+public enum Team {
     BLEU("Bleu", "Bleue", ChatColor.BLUE),
     ROUGE("Rouge", "Rouge", ChatColor.RED),
     VERT("Vert", "Verte", ChatColor.GREEN),
@@ -15,7 +15,7 @@ public enum TeamColor {
     private final String feminine;
     private final ChatColor color;
 
-    TeamColor(String name, String feminine, ChatColor color) {
+    Team(String name, String feminine, ChatColor color) {
         this.name = name;
         this.feminine = feminine;
         this.color = color;

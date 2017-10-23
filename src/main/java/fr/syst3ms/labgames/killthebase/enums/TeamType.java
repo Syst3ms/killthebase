@@ -8,17 +8,17 @@ import java.util.Set;
  * Created by ARTHUR on 13/10/2017.
  */
 public enum TeamType {
-    SIX(5, Sets.newHashSet(TeamColor.BLEU, TeamColor.ROUGE), 3),
-    HUIT(6, Sets.newHashSet(TeamColor.values()), 2),
-    DOUZE(10, Sets.newHashSet(TeamColor.values()), 3);
+    SIX(5, Sets.newHashSet(Team.BLEU, Team.ROUGE), 3),
+    HUIT(6, Sets.newHashSet(Team.values()), 2),
+    DOUZE(10, Sets.newHashSet(Team.values()), 3);
 
     private final int requiredPlayerAmount;
-    private final Set<TeamColor> allowedTeamColors;
+    private final Set<Team> allowedTeams;
     private final int maxTeamPlayerAmount;
 
-    TeamType(int requiredPlayerAmount, Set<TeamColor> allowedTeamColors, int maxTeamPlayerAmount) {
+    TeamType(int requiredPlayerAmount, Set<Team> allowedTeams, int maxTeamPlayerAmount) {
         this.requiredPlayerAmount = requiredPlayerAmount;
-        this.allowedTeamColors = allowedTeamColors;
+        this.allowedTeams = allowedTeams;
         this.maxTeamPlayerAmount = maxTeamPlayerAmount;
     }
 
@@ -26,8 +26,8 @@ public enum TeamType {
         return requiredPlayerAmount;
     }
 
-    public Set<TeamColor> getAllowedTeamColors() {
-        return allowedTeamColors;
+    public Set<Team> getAllowedTeams() {
+        return allowedTeams;
     }
 
     public int getMaxTeamPlayerAmount() {

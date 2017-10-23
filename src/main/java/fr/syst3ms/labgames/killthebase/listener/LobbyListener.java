@@ -3,7 +3,7 @@ package fr.syst3ms.labgames.killthebase.listener;
 import fr.labgames.api.utils.messages.MessageManager;
 import fr.syst3ms.labgames.killthebase.KillTheBase;
 import fr.syst3ms.labgames.killthebase.classes.TeamManager;
-import fr.syst3ms.labgames.killthebase.enums.TeamColor;
+import fr.syst3ms.labgames.killthebase.enums.Team;
 import fr.syst3ms.labgames.killthebase.enums.TeamType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -122,11 +122,11 @@ public class LobbyListener implements Listener {
             if (e.getCurrentItem().getType() == Material.WOOL) {
                 e.setCancelled(true);
                 int index = (e.getSlot() - 1) / 2;
-                TeamColor team = TeamColor.values()[index];
+                Team team = Team.values()[index];
                 teamManager.requestTeamJoin(team, (Player) e.getWhoClicked());
                 ItemStack i = items.get(index);
                 ItemMeta m = i.getItemMeta();
-                TeamColor t = TeamColor.values()[index];
+                Team t = Team.values()[index];
                 List<String> displayedPlayers = new ArrayList<>(teamManager.getTeamToPlayerMap().get(t)).stream()
                                                                                                         .map(pl -> "  - " +
                                                                                                                pl.getName())
@@ -169,7 +169,7 @@ public class LobbyListener implements Listener {
         metas.get(3).setDisplayName("Rejoindre l'équipe " + ChatColor.YELLOW + "Jaune");
         for (int i = 0; i < metas.size(); i++) {
             ItemMeta m = metas.get(i);
-            TeamColor team = TeamColor.values()[i];
+            Team team = Team.values()[i];
             List<String> displayedPlayers = new ArrayList<>(teamManager.getPlayers(team)).stream()
                                                                                                        .map(pl -> "  - " +
                                                                                                               pl.getName())

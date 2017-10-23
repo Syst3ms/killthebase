@@ -2,11 +2,15 @@ package fr.syst3ms.labgames.killthebase.listener;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
+import fr.labgames.api.API;
 import fr.labgames.api.libs.TitleAPI.TitleAPI;
+import fr.labgames.api.listeners.LabGamesPlayer;
+import fr.labgames.api.utils.boards.ScoreboardSign;
+import fr.labgames.api.utils.bungeecord.BungeeCord;
 import fr.labgames.api.utils.messages.MessageManager;
 import fr.syst3ms.labgames.killthebase.KillTheBase;
 import fr.syst3ms.labgames.killthebase.classes.TeamManager;
-import fr.syst3ms.labgames.killthebase.enums.TeamColor;
+import fr.syst3ms.labgames.killthebase.enums.Team;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.enchantments.Enchantment;
@@ -36,19 +40,19 @@ import java.util.stream.Collectors;
  */
 public class GameListener implements Listener {
     public static final World GAME_WORLD = Bukkit.getWorld("ktb");
-    public static final Map<TeamColor, Location> SPAWN_LOCATIONS = new HashMap<>();
+    public static final Map<Team, Location> SPAWN_LOCATIONS = new HashMap<>();
     public static final Location NPC_LOCATION = new Location(GAME_WORLD, 0, 0, 0);
     private static TeamManager teamManager;
-    private static Multiset<TeamColor> teamKillCount = HashMultiset.create();
+    private static Multiset<Team> teamKillCount = HashMultiset.create();
     private static Multimap<Player, Location> placedBlockLocations = HashMultimap.create();
     private static Multiset<Player> photons = HashMultiset.create();
 
     static {
         // Spawn locations
-        SPAWN_LOCATIONS.put(TeamColor.BLEU, new Location(GAME_WORLD, 0, 0, 0));
-        SPAWN_LOCATIONS.put(TeamColor.ROUGE, new Location(GAME_WORLD, 0, 0, 0));
-        SPAWN_LOCATIONS.put(TeamColor.VERT, new Location(GAME_WORLD, 0, 0, 0));
-        SPAWN_LOCATIONS.put(TeamColor.JAUNE, new Location(GAME_WORLD, 0, 0, 0));
+        SPAWN_LOCATIONS.put(Team.BLEU, new Location(GAME_WORLD, 0, 0, 0));
+        SPAWN_LOCATIONS.put(Team.ROUGE, new Location(GAME_WORLD, 0, 0, 0));
+        SPAWN_LOCATIONS.put(Team.VERT, new Location(GAME_WORLD, 0, 0, 0));
+        SPAWN_LOCATIONS.put(Team.JAUNE, new Location(GAME_WORLD, 0, 0, 0));
         // Photons
         GAME_WORLD.getPlayers().forEach(p -> photons.add(p, 50));
     }
@@ -60,23 +64,11 @@ public class GameListener implements Listener {
             p.sendMessage(MessageManager.getMessageGameStart());
             p.teleport(SPAWN_LOCATIONS.get(teamManager.getTeam(p)));
             p.getInventory().setArmorContents(getEquipment(teamManager.getTeam(p)));
+            createVillager();
         });
     }
 
-    public static void onChestOpen(PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        if (p.getWorld() == GAME_WORLD &&
-            e.getAction() == Action.RIGHT_CLICK_BLOCK &&
-            (e.getClickedBlock().getType() == Material.CHEST)) {
-            TeamColor team = teamManager.getTeam(p);
-            if (e.getClickedBlock().getLocation().distanceSquared(SPAWN_LOCATIONS.get(team)) >
-                225) { // si la distance au carré > 15 au carré
-                e.setUseInteractedBlock(Event.Result.DENY);
-            }
-        }
-    }
-
-    private static ItemStack[] getEquipment(TeamColor team) {
+    private static ItemStack[] getEquipment(Team team) {
         List<ItemStack> items = Arrays
                 .asList(new ItemStack(Material.DIAMOND_HELMET), new ItemStack(Material.DIAMOND_CHESTPLATE),
                         new ItemStack(Material.DIAMOND_LEGGINGS), new ItemStack(Material.DIAMOND_BOOTS));
@@ -109,6 +101,20 @@ public class GameListener implements Listener {
                Strings.repeat("\u25ae", 75 - displayHealth);
     }
 
+	@EventHandler
+	public static void onChestOpen(PlayerInteractEvent e) {
+		Player p = e.getPlayer();
+		if (p.getWorld() == GAME_WORLD &&
+			e.getAction() == Action.RIGHT_CLICK_BLOCK &&
+			(e.getClickedBlock().getType() == Material.CHEST)) {
+			Team team = teamManager.getTeam(p);
+			if (e.getClickedBlock().getLocation().distanceSquared(SPAWN_LOCATIONS.get(team)) >
+				225) { // si la distance au carré > 15 au carré
+				e.setUseInteractedBlock(Event.Result.DENY);
+			}
+		}
+	}
+
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent e) {
         Entity ent = e.getEntity();
@@ -118,10 +124,9 @@ public class GameListener implements Listener {
                 e.setCancelled(true);
                 return;
             }
-            Bukkit.getScheduler().runTask(
-                    KillTheBase.getInstance(),
-                    () -> ent.setCustomName(getHealthBarText(((LivingEntity) ent).getHealth()))
-            );
+			LivingEntity lEnt = (LivingEntity) ent;
+			lEnt.setCustomName(getHealthBarText(lEnt.getHealth() - e.getFinalDamage()));
+			photons.add((Player) e.getDamager(), 1);
         }
     }
 
@@ -132,14 +137,10 @@ public class GameListener implements Listener {
             Player attacker = entity.getKiller();
             if (entity.getType() == EntityType.PLAYER && attacker != null) {
                 photons.add(attacker, 5);
-                TeamColor team = teamManager.getTeam(attacker);
+                Team team = teamManager.getTeam(attacker);
                 teamKillCount.add(team);
             } else if (entity.getType() == EntityType.VILLAGER && attacker != null) {
-                TeamColor winning = teamManager.getTeam(attacker);
-                for (Player p : teamManager.getPlayers(winning)) {
-                    TitleAPI.sendTitle(p, 2, 30, 2, ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
-                    p.sendMessage(MessageManager.getPrefix() + ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
-                }
+                onWin(teamManager.getTeam(attacker));
             }
         }
     }
@@ -148,7 +149,7 @@ public class GameListener implements Listener {
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
         if (p.getWorld() == GAME_WORLD) {
-            TeamColor team = teamManager.getTeam(p);
+            Team team = teamManager.getTeam(p);
             p.teleport(SPAWN_LOCATIONS.get(team));
             p.getInventory().setArmorContents(getEquipment(team));
         }
@@ -194,4 +195,23 @@ public class GameListener implements Listener {
             e.blockList().removeIf(b -> !placedBlockLocations.values().contains(b.getLocation()));
         }
     }
+
+    private void onWin(Team winning) {
+		for (Player p : GAME_WORLD.getPlayers()) {
+			TitleAPI.sendTitle(p, 2, 30, 2, ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
+			p.sendMessage(MessageManager.getPrefix() + ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
+			API.sql.addPhotons(p, photons.count(p));
+		}
+		teamManager.getPlayers(winning).forEach(p -> API.sql.addQuarks(p, 5));
+		Bukkit.getScheduler().runTaskLater(
+			KillTheBase.getInstance(),
+			() -> {
+				for (Player p : GAME_WORLD.getPlayers()) {
+					BungeeCord.sendPlayer(p, "lobby-1");
+				}
+				placedBlockLocations.values().forEach(l -> l.getBlock().setType(Material.AIR));
+			},
+			400L
+		);
+	}
 }

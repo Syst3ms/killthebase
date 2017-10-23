@@ -4,7 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.sun.org.apache.xpath.internal.operations.Mult;
 import fr.labgames.api.utils.messages.MessageManager;
-import fr.syst3ms.labgames.killthebase.enums.TeamColor;
+import fr.syst3ms.labgames.killthebase.enums.Team;
 import fr.syst3ms.labgames.killthebase.enums.TeamType;
 import org.bukkit.entity.Player;
 
@@ -18,18 +18,18 @@ import java.util.Map;
  */
 public class TeamManager {
     private final TeamType teamType;
-    private Map<Player, TeamColor> playerToTeamMap = new HashMap<>();
-    private Multimap<TeamColor, Player> teamToPlayerMap = HashMultimap.create();
+    private Map<Player, Team> playerToTeamMap = new HashMap<>();
+    private Multimap<Team, Player> teamToPlayerMap = HashMultimap.create();
 
     public TeamManager(TeamType teamType) {
         this.teamType = teamType;
     }
 
-    public Multimap<TeamColor, Player> getTeamToPlayerMap() {
+    public Multimap<Team, Player> getTeamToPlayerMap() {
         return teamToPlayerMap;
     }
 
-    public void requestTeamJoin(TeamColor team, Player p) {
+    public void requestTeamJoin(Team team, Player p) {
         if (playerToTeamMap.get(p) == team){
             switch (team) {
                 case BLEU:
@@ -47,7 +47,7 @@ public class TeamManager {
             }
             return;
         }
-        assert teamType.getAllowedTeamColors().contains(team);
+        assert teamType.getAllowedTeams().contains(team);
         if (playerToTeamMap.values().stream().filter(tc -> tc == team).count() == teamType.getMaxTeamPlayerAmount()) {
             switch (team) {
                 case BLEU:
@@ -88,15 +88,15 @@ public class TeamManager {
         playerToTeamMap.remove(p);
     }
 
-    public TeamColor getTeam(Player p) {
+    public Team getTeam(Player p) {
         return playerToTeamMap.get(p);
     }
 
-    public List<Player> getPlayers(TeamColor team) {
+    public List<Player> getPlayers(Team team) {
         return new ArrayList<>(teamToPlayerMap.get(team));
     }
 
-    public Map<Player, TeamColor> getPlayerToTeamMap() {
+    public Map<Player, Team> getPlayerToTeamMap() {
         return playerToTeamMap;
     }
 

@@ -1,10 +1,12 @@
 package fr.syst3ms.labgames.killthebase;
 
+import fr.labgames.api.utils.boards.ScoreboardSign;
 import fr.syst3ms.labgames.killthebase.enums.TeamType;
 import fr.syst3ms.labgames.killthebase.listener.GameListener;
 import fr.syst3ms.labgames.killthebase.listener.LobbyListener;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class KillTheBase extends JavaPlugin {
@@ -57,7 +59,12 @@ public class KillTheBase extends JavaPlugin {
 		Bukkit.getPluginManager().registerEvents(new GameListener(), this);
 	}
 
-
+	private void createScoreboard() {
+		for (Player p : GameListener.GAME_WORLD.getPlayers()) {
+			ScoreboardSign ss = new ScoreboardSign(p, "killthebase");
+			ss.setObjectiveName();
+		}
+	}
 
     public TeamType getTeamType() {
         return teamType;
