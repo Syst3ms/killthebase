@@ -1,5 +1,5 @@
 name: KillTheBase
 description: Le plugin pour KillTheBase
 author: Syst3ms
-main: fr.syst3ms.labgames.killthebase
+main: fr.syst3ms.labgames.killthebase.KillTheBase
 version: 1.0-ALPHA

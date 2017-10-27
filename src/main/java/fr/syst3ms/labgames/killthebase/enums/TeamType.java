@@ -3,16 +3,15 @@ package fr.syst3ms.labgames.killthebase.enums;
 import com.google.common.collect.Sets;
 
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Created by ARTHUR on 13/10/2017.
  */
 public enum TeamType {
-	SIX(5, Sets.newHashSet(Team.BLEU, Team.ROUGE), 3, "2x3"), HUIT(6, Sets.newHashSet(Team.values()), 2, "4x2"), DOUZE(
-		10,
-		Sets.newHashSet(Team.values()),
-		3,
-		"4x3");
+	SIX(5, Sets.newHashSet(Team.BLEU, Team.ROUGE), 3, "2x3"),
+	HUIT(6, Sets.newHashSet(Team.values()), 2, "4x2"),
+	DOUZE(10, Sets.newHashSet(Team.values()), 3, "4x3");
 
 	private final int requiredPlayerAmount;
 	private final Set<Team> allowedTeams;
@@ -40,5 +39,9 @@ public enum TeamType {
 
 	public String getDisplayName() {
 		return displayName;
+	}
+
+	public static TeamType byMaxPlayers(int maxPlayers) {
+		return Stream.of(values()).filter(tt -> tt.maxTeamPlayerAmount == maxPlayers).findFirst().orElse(null);
 	}
 }
