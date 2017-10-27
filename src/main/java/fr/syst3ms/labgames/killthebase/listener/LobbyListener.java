@@ -176,7 +176,7 @@ public class LobbyListener implements Listener {
 				}
 			}
 			scoreboards.forEach(ScoreboardSign::destroy);
-			GameListener.getInstance().startGame(teamManager);
+			GameListener.startGame(teamManager);
 		}, 60L);
 	}
 

@@ -20,5 +20,6 @@ repositories {
 
 dependencies {
     compile "org.github.paperspigot:paperspigot-api:1.8.8-R0.1-SNAPSHOT"
+    compile fileTree(dir: '../../Downloads/lib', include: ['*.jar'])
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

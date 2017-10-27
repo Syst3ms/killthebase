@@ -39,8 +39,11 @@ public class GameListener implements Listener {
 	public static final World GAME_WORLD = Bukkit.getWorld("ktb");
 	public static final Map<Team, Location> SPAWN_LOCATIONS = new HashMap<>();
 	public static final Location NPC_LOCATION = new Location(GAME_WORLD, 1, 37, 0);
-	private static final GameListener instance = new GameListener();
 	private static Multiset<Player> photons = HashMultiset.create();
+	private static TeamManager teamManager;
+	private static Multiset<Team> teamKillCount = HashMultiset.create();
+	private static int timer = 0;
+	private static List<ScoreboardSign> scoreboards = new ArrayList<>();
 
 	static {
 		// Spawn locations
@@ -52,64 +55,22 @@ public class GameListener implements Listener {
 		GAME_WORLD.getPlayers().forEach(p -> photons.add(p, 50));
 	}
 
-	private TeamManager teamManager;
-	private Multiset<Team> teamKillCount = HashMultiset.create();
 	private Multimap<Player, Location> placedBlockLocations = HashMultimap.create();
-	private int timer = 0;
-	private List<ScoreboardSign> scoreboards = new ArrayList<>();
 
-	private GameListener() {
-	}
-
-	public static GameListener getInstance() {
-		return instance;
-	}
-
-	public void startGame(TeamManager manager) {
+	public static void startGame(TeamManager manager) {
 		teamManager = manager;
 		List<Player> players = LobbyListener.LOBBY_WORLD.getPlayers();
+		spawnNpc();
 		createGameScoreboard();
 		players.forEach(p -> {
 			p.sendMessage(MessageManager.getMessageGameStart());
 			p.teleport(SPAWN_LOCATIONS.get(teamManager.getTeam(p)));
 			p.getInventory().setArmorContents(getEquipment(teamManager.getTeam(p)));
-			spawnNpc();
 		});
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(KillTheBase.getInstance(), () -> timer += 1, 0L, 20L);
 	}
 
-	private ItemStack[] getEquipment(Team team) {
-		List<ItemStack> items = Arrays.asList(new ItemStack(Material.DIAMOND_HELMET),
-			new ItemStack(Material.DIAMOND_CHESTPLATE),
-			new ItemStack(Material.DIAMOND_LEGGINGS),
-			new ItemStack(Material.DIAMOND_BOOTS));
-		List<ItemMeta> metas = items.stream().map(ItemStack::getItemMeta).collect(Collectors.toList());
-		int level = teamKillCount.count(team) / 5;
-		metas.forEach(m -> {
-			m.addEnchant(Enchantment.PROTECTION_EXPLOSIONS, 1, false);
-			if (level > 0) {
-				m.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, level, false);
-			}
-		});
-		for (int i = 0; i < metas.size(); i++) {
-			items.get(i).setItemMeta(metas.get(i));
-		}
-		return items.toArray(new ItemStack[0]);
-	}
-
-	private List<Entity> getNpcElements() {
-		return GAME_WORLD.getEntities()
-						 .stream()
-						 .filter(e -> (e.getType() == EntityType.VILLAGER || e.getType() == EntityType.ARMOR_STAND) && e.isCustomNameVisible())
-						 .collect(Collectors.toList());
-	}
-
-	private String getGameTimeText() {
-		int minutes = timer / 60, seconds = timer % 60;
-		return (minutes > 9 ? minutes : "0" + minutes) + ":" + (seconds > 9 ? seconds : "0" + seconds);
-	}
-
-	private void spawnNpc() {
+	private static void spawnNpc() {
 		Villager npc = (Villager) GAME_WORLD.spawnEntity(NPC_LOCATION, EntityType.VILLAGER);
 		npc.setMaxHealth(150);
 		npc.setHealth(150);
@@ -123,7 +84,14 @@ public class GameListener implements Listener {
 		as.setCustomNameVisible(true);
 	}
 
-	private void createGameScoreboard() {
+	private static String getHealthBarText(double health) {
+		float h = (float) health;
+		int displayHealth = h % 2 == 0 ? Math.round(h / 2) : Math.round((h + 1) / 2);
+		return ChatColor.RED + Strings.repeat("\u25ae", displayHealth) + ChatColor.WHITE + Strings.repeat("\u25ae",
+			75 - displayHealth);
+	}
+
+	private static void createGameScoreboard() {
 		for (Player p : GAME_WORLD.getPlayers()) {
 			ScoreboardSign sc = new ScoreboardSign(p,
 				ChatColor.translateAlternateColorCodes('&',
@@ -140,17 +108,41 @@ public class GameListener implements Listener {
 			}
 			sc.setLine(i++, "--- Jeu ---");
 			sc.setLine(i++,
-				ChatColor.DARK_PURPLE + "PNJ : " + ChatColor.RED + ((((Villager) getNpcElements().get(0)).getHealth() + 1) / 2) + " ❤");
+				ChatColor.DARK_PURPLE + "PNJ : " + ChatColor.RED + ((((Villager) getNpcElements().get(0)).getHealth() + 1) / 2) + " \u2764");
 			sc.setLine(i, ChatColor.AQUA + "Temps de jeu : " + ChatColor.GREEN + getGameTimeText());
 			scoreboards.add(sc);
 		}
 	}
 
-	private String getHealthBarText(double health) {
-		float h = (float) health;
-		int displayHealth = h % 2 == 0 ? Math.round(h / 2) : Math.round((h + 1) / 2);
-		return ChatColor.RED + Strings.repeat("\u25ae", displayHealth) + ChatColor.WHITE + Strings.repeat("\u25ae",
-			75 - displayHealth);
+	private static List<Entity> getNpcElements() {
+		return GAME_WORLD.getEntities()
+						 .stream()
+						 .filter(e -> (e.getType() == EntityType.VILLAGER || e.getType() == EntityType.ARMOR_STAND) && e.isCustomNameVisible())
+						 .collect(Collectors.toList());
+	}
+
+	private static String getGameTimeText() {
+		int minutes = timer / 60, seconds = timer % 60;
+		return (minutes > 9 ? minutes : "0" + minutes) + ":" + (seconds > 9 ? seconds : "0" + seconds);
+	}
+
+	private static ItemStack[] getEquipment(Team team) {
+		List<ItemStack> items = Arrays.asList(new ItemStack(Material.DIAMOND_HELMET),
+			new ItemStack(Material.DIAMOND_CHESTPLATE),
+			new ItemStack(Material.DIAMOND_LEGGINGS),
+			new ItemStack(Material.DIAMOND_BOOTS));
+		List<ItemMeta> metas = items.stream().map(ItemStack::getItemMeta).collect(Collectors.toList());
+		int level = teamKillCount.count(team) / 5;
+		metas.forEach(m -> {
+			m.addEnchant(Enchantment.PROTECTION_EXPLOSIONS, 1, false);
+			if (level > 0) {
+				m.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, level, false);
+			}
+		});
+		for (int i = 0; i < metas.size(); i++) {
+			items.get(i).setItemMeta(metas.get(i));
+		}
+		return items.toArray(new ItemStack[0]);
 	}
 
 	@EventHandler
