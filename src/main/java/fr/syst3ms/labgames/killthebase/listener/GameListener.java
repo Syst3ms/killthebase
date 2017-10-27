@@ -75,7 +75,6 @@ public class GameListener implements Listener {
 			p.getInventory().setArmorContents(getEquipment(teamManager.getTeam(p)));
 			spawnNpc();
 		});
-
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(KillTheBase.getInstance(), () -> timer += 1, 0L, 20L);
 	}
 
@@ -98,14 +97,11 @@ public class GameListener implements Listener {
 		return items.toArray(new ItemStack[0]);
 	}
 
-	private Villager getNpc() {
-		Optional<Entity> opt = GAME_WORLD
-			.getEntities()
-			.stream()
-			.filter(e -> e.getType() == EntityType.VILLAGER)
-			.findFirst();
-		assert opt.isPresent();
-		return (Villager) opt.get();
+	private List<Entity> getNpcElements() {
+		return GAME_WORLD.getEntities()
+						 .stream()
+						 .filter(e -> (e.getType() == EntityType.VILLAGER || e.getType() == EntityType.ARMOR_STAND) && e.isCustomNameVisible())
+						 .collect(Collectors.toList());
 	}
 
 	private String getGameTimeText() {
@@ -117,8 +113,14 @@ public class GameListener implements Listener {
 		Villager npc = (Villager) GAME_WORLD.spawnEntity(NPC_LOCATION, EntityType.VILLAGER);
 		npc.setMaxHealth(150);
 		npc.setHealth(150);
-		npc.setCustomName(getHealthBarText(150));
+		npc.setCustomName("Le Grand Méchant-Pas-Beau");
+		npc.setCustomNameVisible(true);
 		npc.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 999_999, 10, false, false), true);
+		ArmorStand as = (ArmorStand) GAME_WORLD.spawnEntity(NPC_LOCATION.add(0.0, 2.0, 0.0), EntityType.ARMOR_STAND);
+		as.setVisible(false);
+		as.setMarker(true);
+		as.setCustomName(getHealthBarText(150));
+		as.setCustomNameVisible(true);
 	}
 
 	private void createGameScoreboard() {
@@ -137,7 +139,8 @@ public class GameListener implements Listener {
 				sc.setLine(i++, "Les Jaunes : " + ChatColor.YELLOW + teamManager.getPlayers(Team.JAUNE).size());
 			}
 			sc.setLine(i++, "--- Jeu ---");
-			sc.setLine(i++, ChatColor.DARK_PURPLE + "PNJ : " + ChatColor.RED + ((getNpc().getHealth() + 1) / 2) + " ❤");
+			sc.setLine(i++,
+				ChatColor.DARK_PURPLE + "PNJ : " + ChatColor.RED + ((((Villager) getNpcElements().get(0)).getHealth() + 1) / 2) + " ❤");
 			sc.setLine(i, ChatColor.AQUA + "Temps de jeu : " + ChatColor.GREEN + getGameTimeText());
 			scoreboards.add(sc);
 		}
@@ -153,14 +156,12 @@ public class GameListener implements Listener {
 	@EventHandler
 	public void onChestOpen(PlayerInteractEvent e) {
 		Player p = e.getPlayer();
-		if (p.getWorld() == GAME_WORLD && e.getAction() == Action.RIGHT_CLICK_BLOCK && (e
-			.getClickedBlock()
-			.getType() == Material.CHEST)) {
+		if (p.getWorld() == GAME_WORLD && e.getAction() == Action.RIGHT_CLICK_BLOCK && (e.getClickedBlock()
+																						 .getType() == Material.CHEST)) {
 			Team team = teamManager.getTeam(p);
-			if (e
-				.getClickedBlock()
-				.getLocation()
-				.distanceSquared(SPAWN_LOCATIONS.get(team)) > 225) { // si la distance au carré > 15 au carré
+			if (e.getClickedBlock()
+				 .getLocation()
+				 .distanceSquared(SPAWN_LOCATIONS.get(team)) > 225) { // si la distance au carré > 15 au carré
 				e.setUseInteractedBlock(Event.Result.DENY);
 			}
 		}
@@ -170,14 +171,13 @@ public class GameListener implements Listener {
 	public void onDamage(EntityDamageByEntityEvent e) {
 		Entity ent = e.getEntity();
 		if (ent.getWorld() == GAME_WORLD && ent.getType() == EntityType.VILLAGER) {
-			if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK || e
-				.getDamager()
-				.getType() != EntityType.PLAYER) {
+			if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK || e.getDamager()
+																				.getType() != EntityType.PLAYER) {
 				e.setCancelled(true);
 				return;
 			}
-			LivingEntity lEnt = (LivingEntity) ent;
-			lEnt.setCustomName(getHealthBarText(lEnt.getHealth() - e.getFinalDamage()));
+			ArmorStand as = (ArmorStand) getNpcElements().get(1);
+			as.setCustomName(getHealthBarText(as.getHealth() - e.getFinalDamage()));
 			photons.add((Player) e.getDamager(), 1);
 		}
 	}
@@ -262,6 +262,7 @@ public class GameListener implements Listener {
 		teamManager.getPlayers(winning).forEach(p -> API.sql.addQuarks(p, 5));
 		Bukkit.getScheduler().runTaskLater(KillTheBase.getInstance(), () -> {
 			scoreboards.forEach(ScoreboardSign::destroy);
+			getNpcElements().get(1).remove();
 			for (Player p : GAME_WORLD.getPlayers()) {
 				BungeeCord.sendPlayer(p, "lobby-1");
 			}
