@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class GameListener implements Listener {
 	public static final World GAME_WORLD = Bukkit.getWorld("ktb");
 	public static final Map<Team, Location> SPAWN_LOCATIONS = new HashMap<>();
-	public static final Location NPC_LOCATION = new Location(GAME_WORLD, 1, 37, 0);
+	public static final Location NPC_LOCATION = new Location(GAME_WORLD, 1, 36, 0);
 	private static Multiset<Player> photons = HashMultiset.create();
 	private static TeamManager teamManager;
 	private static Multiset<Team> teamKillCount = HashMultiset.create();
@@ -47,12 +47,12 @@ public class GameListener implements Listener {
 
 	static {
 		// Spawn locations
-		SPAWN_LOCATIONS.put(Team.BLEU, new Location(GAME_WORLD, -27, 37, 0));
-		SPAWN_LOCATIONS.put(Team.ROUGE, new Location(GAME_WORLD, 15, 37, 28));
-		SPAWN_LOCATIONS.put(Team.VERT, new Location(GAME_WORLD, 30, 37, 0));
-		SPAWN_LOCATIONS.put(Team.JAUNE, new Location(GAME_WORLD, 1, 37, 29));
+		SPAWN_LOCATIONS.put(Team.BLEU, new Location(GAME_WORLD, -28, 36, 0));
+		SPAWN_LOCATIONS.put(Team.ROUGE, new Location(GAME_WORLD, 1, 36, -29));
+		SPAWN_LOCATIONS.put(Team.VERT, new Location(GAME_WORLD, 30, 36, 0));
+		SPAWN_LOCATIONS.put(Team.JAUNE, new Location(GAME_WORLD, 1, 36, 29));
 		// Photons
-		GAME_WORLD.getPlayers().forEach(p -> photons.add(p, 50));
+		Bukkit.getOnlinePlayers().forEach(p -> photons.add(p, 50));
 	}
 
 	private Multimap<Player, Location> placedBlockLocations = HashMultimap.create();
@@ -74,7 +74,7 @@ public class GameListener implements Listener {
 		Villager npc = (Villager) GAME_WORLD.spawnEntity(NPC_LOCATION, EntityType.VILLAGER);
 		npc.setMaxHealth(150);
 		npc.setHealth(150);
-		npc.setCustomName("Le Grand Méchant-Pas-Beau");
+		npc.setCustomName("Le Grand M\u00e9chant-Pas-Beau");
 		npc.setCustomNameVisible(true);
 		npc.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 999_999, 10, false, false), true);
 		ArmorStand as = (ArmorStand) GAME_WORLD.spawnEntity(NPC_LOCATION.add(0.0, 2.0, 0.0), EntityType.ARMOR_STAND);
@@ -98,7 +98,7 @@ public class GameListener implements Listener {
 					"&5KillTheBase &7- &e" + teamManager.getTeamType().getDisplayName()));
 			sc.create();
 			int i = 0;
-			sc.setLine(i++, "--- Équipes ---");
+			sc.setLine(i++, "--- \u00e9quipes ---");
 			sc.setLine(i++,
 				ChatColor.GOLD + "Les Bleus : " + ChatColor.BLUE + teamManager.getPlayers(Team.BLEU).size());
 			sc.setLine(i++, "Les Rouges : " + ChatColor.RED + teamManager.getPlayers(Team.ROUGE).size());
@@ -246,8 +246,8 @@ public class GameListener implements Listener {
 				2,
 				30,
 				2,
-				ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
-			p.sendMessage(MessageManager.getPrefix() + ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'équipe " + winning
+				ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'\u00e9quipe " + winning.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
+			p.sendMessage(MessageManager.getPrefix() + ChatColor.GOLD + "Victoire" + ChatColor.GRAY + " de l'\u00e9quipe " + winning
 				.getColor() + winning.getFeminine() + ChatColor.GRAY + " !");
 			API.sql.addPhotons(p, photons.count(p));
 		}

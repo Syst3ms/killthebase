@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import fr.labgames.api.utils.messages.MessageManager;
 import fr.syst3ms.labgames.killthebase.enums.Team;
 import fr.syst3ms.labgames.killthebase.enums.TeamType;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -30,55 +31,16 @@ public class TeamManager {
 
 	public void requestTeamJoin(Team team, Player p) {
 		if (playerToTeamMap.get(p) == team) {
-			switch (team) {
-				case BLEU:
-					p.sendMessage(MessageManager.getMessageGameAlreadyJoinTeamBlue());
-					break;
-				case ROUGE:
-					p.sendMessage(MessageManager.getMessageGameAlreadyJoinTeamRed());
-					break;
-				case VERT:
-					p.sendMessage(MessageManager.getMessageGameAlreadyJoinTeamGreen());
-					break;
-				case JAUNE:
-					p.sendMessage(MessageManager.getMessageGameAlreadyJoinTeamYellow());
-					break;
-			}
-			return;
+            p.sendMessage("\u00a77Tu est d\u00e9j\u00e0 dans l'\u00e9quipe " + team.getColor() + team.getFeminine());
+            return;
 		}
 		assert teamType.getAllowedTeams().contains(team);
 		if (playerToTeamMap.values().stream().filter(tc -> tc == team).count() == teamType.getMaxTeamPlayerAmount()) {
-			switch (team) {
-				case BLEU:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamBlueFull());
-					break;
-				case ROUGE:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamRedFull());
-					break;
-				case VERT:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamGreenFull());
-					break;
-				case JAUNE:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamYellowFull());
-					break;
-			}
+			p.sendMessage("L\'\u00e9quipe " + team.getColor() + team.getFeminine() + ChatColor.GRAY + " est déjà pleine !");
 		} else {
 			playerToTeamMap.put(p, team);
 			teamToPlayerMap.put(team, p);
-			switch (team) {
-				case BLEU:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamBlue());
-					break;
-				case ROUGE:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamRed());
-					break;
-				case VERT:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamGreen());
-					break;
-				case JAUNE:
-					p.sendMessage(MessageManager.getMessageGameJoinTeamYellow());
-					break;
-			}
+			p.sendMessage("\u00a77Tu as rejoint l\'\u00e9quipe " + team.getColor() + team.getFeminine());
 		}
 	}
 
