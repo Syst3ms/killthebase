@@ -36,7 +36,8 @@ public class LobbyListener implements Listener {
             WorldCreator creator = new WorldCreator("lobby");
             LOBBY_WORLD = Bukkit.createWorld(creator);
         }
-        LOBBY_LOCATION = new Location(LOBBY_WORLD, 66, 54, -1);
+        LOBBY_LOCATION = new Location(LOBBY_WORLD, 66.5, 54, -0.5);
+        LOBBY_WORLD.setPVP(false);
         ItemStack i = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = i.getItemMeta();
         meta.setDisplayName("Choisir son \u00e9quipe");
@@ -60,8 +61,9 @@ public class LobbyListener implements Listener {
         Bukkit.getScheduler().runTask(KillTheBase.getInstance(), () -> {
             Player p = e.getPlayer();
             p.teleport(LOBBY_LOCATION);
+            p.setGameMode(GameMode.ADVENTURE);
             TitleAPI.sendTitle(p, 10, 40, 10, ChatColor.translateAlternateColorCodes('&', "&5&lKillTheBase"), "");
-            createScoreboard(p);
+            createScoreboard();
             if (firstJoin) {
                 Bukkit.getScheduler().scheduleSyncRepeatingTask(KillTheBase.getInstance(), () -> {
                     int playerAmount = teamManager.getTeamToPlayerMap().values().size();
@@ -75,22 +77,23 @@ public class LobbyListener implements Listener {
         });
     }
 
-    private void createScoreboard(Player p) {
-        ScoreboardSign sc = new ScoreboardSign(p,
-                ChatColor.translateAlternateColorCodes('&', "&5KillTheBase &7- &e4x3"));
-        sc.create();
-        sc.setLine(0, "   ");
-        sc.setLine(1, ChatColor.GREEN +
-                      "Encore " +
-                      ChatColor.GOLD +
-                      (teamManager.getTeamType().getRequiredPlayerAmount() -
-                       LOBBY_WORLD.getPlayers().size()) +
-                      ChatColor.GREEN +
-                      " joueur(s)");
-        sc.setLine(3, "   ");
-        sc.setLine(4, "§7Serveur: " + Bukkit.getServerName());
-        sc.setLine(6, "§6play.labgames.fr");
-        scoreboards.add(sc);
+    private void createScoreboard() {
+        for (Player p : LOBBY_WORLD.getPlayers()) {
+            ScoreboardSign sc = new ScoreboardSign(p,
+                    ChatColor.translateAlternateColorCodes('&', "&5KillTheBase &7- &e4x3"));
+            sc.create();
+            sc.setLine(0, "   ");
+            sc.setLine(1, ChatColor.GREEN +
+                          "Encore " +
+                          ChatColor.GOLD +
+                          (teamManager.getTeamType().getRequiredPlayerAmount() - LOBBY_WORLD.getPlayers().size()) +
+                          ChatColor.GREEN +
+                          " joueur(s)");
+            sc.setLine(3, "   ");
+            sc.setLine(4, ChatColor.GRAY + "Serveur: " + Bukkit.getServerName());
+            sc.setLine(6, ChatColor.YELLOW + "play.labgames.fr");
+            scoreboards.add(sc);
+        }
     }
 
     @EventHandler
@@ -98,6 +101,7 @@ public class LobbyListener implements Listener {
         if (e.getPlayer().getLocation().getWorld() == LOBBY_WORLD) {
             Player p = e.getPlayer();
             if (p.getLocation().getBlockY() <= MINIMUM_HEIGHT) {
+                p.setFallDistance(0.0F);
                 p.teleport(LOBBY_LOCATION);
                 p.sendMessage(ChatColor.GRAY +
                               " \u00c9vitez de tomber, \u00e7a m'\u00e9nerve de toujours devoir vous t\u00e9l\u00e9porter");
