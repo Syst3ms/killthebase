@@ -23,6 +23,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -42,7 +43,12 @@ public class GameListener implements Listener {
 	private static Multiset<Player> photons = HashMultiset.create();
 	private static TeamManager teamManager;
 	private static Multiset<Team> teamKillCount = HashMultiset.create();
-	private static int timer = 0;
+
+    public static int getTimer() {
+        return timer;
+    }
+
+    private static int timer = 0;
 	private static List<ScoreboardSign> scoreboards = new ArrayList<>();
 
 	static {
@@ -158,6 +164,13 @@ public class GameListener implements Listener {
 			}
 		}
 	}
+
+	@EventHandler
+    public void onLeave(PlayerQuitEvent e) {
+        if (timer > 0) {
+            teamManager.removePlayer(e.getPlayer());
+        }
+    }
 
 	@EventHandler
 	public void onDamage(EntityDamageByEntityEvent e) {

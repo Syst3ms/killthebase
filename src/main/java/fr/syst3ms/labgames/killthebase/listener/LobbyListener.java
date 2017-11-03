@@ -63,15 +63,17 @@ public class LobbyListener implements Listener {
             p.teleport(LOBBY_LOCATION);
             p.setGameMode(GameMode.ADVENTURE);
             TitleAPI.sendTitle(p, 10, 40, 10, ChatColor.translateAlternateColorCodes('&', "&5&lKillTheBase"), "");
+            scoreboards.forEach(ScoreboardSign::destroy);
             createScoreboard();
             if (firstJoin) {
                 Bukkit.getScheduler().scheduleSyncRepeatingTask(KillTheBase.getInstance(), () -> {
                     int playerAmount = teamManager.getTeamToPlayerMap().values().size();
                     TeamType teamType = KillTheBase.getInstance().getTeamType();
                     if (playerAmount >= teamType.getRequiredPlayerAmount()) {
+                        broadcastToWorld(LOBBY_WORLD, MessageManager.getMessageGameFinishJoinLobby());
                         startCountdown();
                     }
-                }, 0L, 6000L);
+                }, 0L, 400L);
                 firstJoin = false;
             }
         });
@@ -111,10 +113,15 @@ public class LobbyListener implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        if (e.getPlayer().getLocation().getWorld() == LOBBY_WORLD) {
+        if (GameListener.getTimer() == 0) {
             Player p = e.getPlayer();
             if (isCountingDown) {
-                broadcastToWorld(LOBBY_WORLD, ""); // Message pour compte à rebours interrompu par X
+                broadcastToWorld(LOBBY_WORLD, MessageManager.getPrefix() +
+                                              " Le compte à rebours a été interrompu par " +
+                                              ChatColor.LIGHT_PURPLE +
+                                              e.getPlayer() +
+                                              ChatColor.RESET +
+                                              " !"); // Message pour compte à rebours interrompu par X
                 isCountingDown = false;
             }
             if (teamManager.getPlayerToTeamMap().containsKey(p)) {
@@ -165,23 +172,21 @@ public class LobbyListener implements Listener {
 
     private void startCountdown() {
         isCountingDown = true;
-        broadcastToWorld(LOBBY_WORLD, MessageManager.getPrefix() + "La partie commencera dans 8 secondes !");
-        Bukkit.getScheduler().scheduleSyncDelayedTask(KillTheBase.getInstance(), () -> {
-            int i = 5;
-            while (i > 0) {
-                if (!isCountingDown) {
-                    return;
-                }
-                broadcastToWorld(LOBBY_WORLD, "Plus que " + i + " secondes avant le d\u00e9but de la partie !");
-                i--;
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
+        int i = 5;
+        while (i > 0) {
+            if (!isCountingDown) {
+                return;
             }
-            scoreboards.forEach(ScoreboardSign::destroy);
-            GameListener.startGame(teamManager);
-        }, 60L);
+            broadcastToWorld(LOBBY_WORLD, "Plus que " + i + " secondes avant le d\u00e9but de la partie !");
+            i--;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+        }
+        scoreboards.forEach(ScoreboardSign::destroy);
+        GameListener.startGame(teamManager);
+        isCountingDown = false;
     }
 
     private void broadcastToWorld(World w, String message) {
@@ -189,12 +194,17 @@ public class LobbyListener implements Listener {
     }
 
     private void openMenu(Player p) {
+        if (teamManager.getTeamType() == TeamType.SIX && MENU_ITEMS.size() > 2) {
+            MENU_ITEMS = MENU_ITEMS.subList(0, 2);
+        }
         Inventory inv = Bukkit.createInventory(p, 9, "Choix de l'\u00e9quipe"); // OXOXOXOXO
         List<ItemMeta> metas = MENU_ITEMS.stream().map(ItemStack::getItemMeta).collect(Collectors.toList());
         metas.get(0).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.BLUE + "Bleue");
         metas.get(1).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.RED + "Rouge");
-        metas.get(2).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.GREEN + "Rouge");
-        metas.get(3).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.YELLOW + "Jaune");
+        if (teamManager.getTeamType() != TeamType.SIX) {
+            metas.get(2).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.GREEN + "Rouge");
+            metas.get(3).setDisplayName("Rejoindre l'\u00e9quipe " + ChatColor.YELLOW + "Jaune");
+        }
         for (int i = 0; i < metas.size(); i++) {
             ItemMeta m = metas.get(i);
             Team team = Team.values()[i];

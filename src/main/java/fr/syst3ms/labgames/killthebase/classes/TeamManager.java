@@ -35,7 +35,7 @@ public class TeamManager {
             return;
 		}
 		assert teamType.getAllowedTeams().contains(team);
-		if (playerToTeamMap.values().stream().filter(tc -> tc == team).count() == teamType.getMaxTeamPlayerAmount()) {
+		if (teamToPlayerMap.get(team).size() >= teamType.getMaxTeamPlayerAmount()) {
 			p.sendMessage("L\'\u00e9quipe " + team.getColor() + team.getFeminine() + ChatColor.GRAY + " est déjà pleine !");
 		} else {
 			playerToTeamMap.put(p, team);
